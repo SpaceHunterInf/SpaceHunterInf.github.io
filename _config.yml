@@ -15,7 +15,7 @@ footer_text: >
   Photos from <a href="https://unsplash.com" target="_blank">Unsplash</a>.
 keywords: # add your own keywords or leave empty
 lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
-icon: ⚛️ # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
+icon: sailfish.jpeg # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
 
 url: https://SpaceHunterInf.github.io # the base hostname & protocol for your site
 baseurl: # the subpath of your site, e.g. /blog/. Leave blank for root
@@ -41,7 +41,7 @@ repo_trophies:
 # will use title and url fields
 # Take a look to https://github.com/jekyll/jekyll-feed for more customization
 
-rss_icon: true
+rss_icon: false
 
 # -----------------------------------------------------------------------------
 # Layout
@@ -201,8 +201,12 @@ exclude:
   - README.md
   - readme_preview/
   - vendor
-  - projects.md
-  - profiles.md
+  - _pages/projects.md
+  - _pages/profiles.md
+  - _pages/blog.md
+  - _pages/dropdown.md
+  - _pages/news.md
+  - _pages/repositories.md
 keep_files:
   - CNAME
   - .nojekyll
@@ -268,8 +272,8 @@ display_categories: ["external-services"] # these categories will be displayed o
 # -----------------------------------------------------------------------------
 
 scholar:
-  last_name: [Einstein]
-  first_name: [Albert, A.]
+  last_name: [Zhu]
+  first_name: [Xiaochen]
 
   style: apa
   locale: en

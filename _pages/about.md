@@ -2,10 +2,10 @@
 layout: about
 title: about
 permalink: /
-subtitle: <a href='#'>University of Cambridge</a>. GS06 William Gates Building. xz479 [at] cam [dot] ac [dot] uk. I can hear Gaussian noise. 
+subtitle: xz479 [at] cam.ac.uk, I can hear Gaussian noise. 
 
 profile:
-  align: left
+  align: right
   image: prof_pic.jpg
   image_circular: false # crops the image to make it circular
   # more_info: >
@@ -20,4 +20,10 @@ social: true # includes social icons at the bottom of the page
 
 Greetings!
 
-I am Xiaochen Zhu, PhD student in Computer Science at the University of Cambridge, working under the supervision of Prof. [Andreas Vlachos](https://andreasvlachos.github.io/). My research focuses on natural language processing, particularly large language models and dialogue systems. My current projects covers diffusion for controllable dialogue generation, multi-party dialogues, and computational social science ([Deliberation for better collective decision](https://www.delibot.xyz/)).
+I am Xiaochen Zhu, but you can also call me Neo. I am a PhD student in Computer Science at the University of Cambridge, King's College, working under the supervision of [Prof. Andreas Vlachos](https://andreasvlachos.github.io/). My research focuses on natural language processing, particularly large language models and dialogue systems. My current projects explore:
+
+- Diffusion for controllable dialogue generation
+- Multi-party dialogues
+- Computational social science ([Deliberation for Better Collective Decision](https://www.delibot.xyz/))
+
+I graduated with Distinction in the MPhil in Advanced Computer Science at Cambridge. Prior to that, I earned a First Class with Honours in BSc Artificial Intelligence and Computer Science at the University of Edinburgh, where I worked under the supervision of [Prof. Shay Cohen](https://homepages.inf.ed.ac.uk/scohen/).

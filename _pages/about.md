@@ -20,7 +20,7 @@ social: true # includes social icons at the bottom of the page
 
 Greetings!
 
-I am Xiaochen Zhu, but you can also call me Neo. I am a PhD student in Computer Science at the University of Cambridge, King's College, working under the supervision of [Prof. Andreas Vlachos](https://andreasvlachos.github.io/). My research focuses on natural language processing, particularly large language models and dialogue systems. My current projects explore:
+I am Xiaochen Zhu, and you can also call me Neo. I am a PhD student in Computer Science at the University of Cambridge, King's College, working under the supervision of [Prof. Andreas Vlachos](https://andreasvlachos.github.io/). My research focuses on natural language processing, particularly large language models and dialogue systems. My current projects explore:
 
 - Diffusion for controllable dialogue generation
 - Multi-party dialogues

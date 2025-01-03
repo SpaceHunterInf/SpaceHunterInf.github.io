@@ -82,11 +82,12 @@
       "summary": "Led the start-up 'IRIS', developing AI-driven pre-screening tools for primary healthcare. Secured the Top Team Award for innovation."
     }
   ],
-  "experiences": [
+  "work": [
     {
-      "name": "Research Intern",
-      "location": "Henrich Heine University Düsseldorf",
-      "date": "2020-06-01 - 2020-10-01",
+      "name": "Henrich Heine University Düsseldorf",
+      "position": "Research Intern",
+      "startDate": "2020-06-01",
+      "endDate": "2020-10-01",
       "url": "https://www.cs.hhu.de/en/research-groups/dialog-systems-and-machine-learning/our-team/alumni",
       "summary": "Evaluated and improved dialogue system frameworks, resolving issues in generation components and randomness in evaluations. Designed a web interface for cross-evaluations and deployed large-scale human evaluation environments via Amazon Mechanical Turk."
     }
@@ -97,11 +98,7 @@
       "icon": "fa-solid fa-command",
       "keywords": [
         "Python (Experienced with PyTorch, Huggingface, Deepseed, Pytorch-Lightning, etc.)",
-        "Java",
-        "JavaScript",
-        "Haskell",
-        "C",
-        "MIPS",
+        "Java, JavaScript, Haskell, C, MIPS",
         "Isabelle (For Formal Verification and Proofs)"
       ]
     },

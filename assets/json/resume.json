@@ -50,10 +50,11 @@
       "endDate": "2022-05-31",
       "score": "First Class with Honours",
       "courses": [
-        "Machine Learning and Pattern Recognition",
-        "Natural Language Generation and Machine Translation",
+        "Reinforcement Learning (Master's Level)",
+        "Machine Learning and Pattern Recognition (Master's Level)",
+        "Natural Language Generation and Machine Translation (Master's Level)",
+        "Introduction to Quantum Computing (Master's Level)",
         "Discrete Mathematics and Mathematical Reasoning",
-        "Introduction to Quantum Computing",
         "Computer Systems and Security",
         "Automated Reasoning"
       ]

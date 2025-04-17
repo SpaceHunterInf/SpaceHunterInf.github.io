@@ -29,7 +29,7 @@ A brief recap on all the trending autoregressive language model (AR-LM) nowadays
     </div>
 </div>
 <div class="caption">
-    Figure 2. AR-LM predicted the sequence token-by-token. Output tokens are used as input for the next token-prediction in left-to-right manner (top). DLM iteratively refines the entire output sequence from a noisy sample (bottom).
+    Figure 1. AR-LM predicted the sequence token-by-token. Output tokens are used as input for the next token-prediction in left-to-right manner (top). DLM iteratively refines the entire output sequence from a noisy sample (bottom).
 </div>
 
 Putting it into mathematical term is, given a sequence we want to predict, $$\mathbf{x} = \{x_1, x_2, \ldots x_N\}$$ , AR-LM with parameter $$\theta$$ models the following distribution.
@@ -68,25 +68,37 @@ Autoregressive model is extremely successful nowadays, so why do we still need a
 Diffusion models are very successful and widely adopted in computer vision tasks, such as image generation, super-resolution, and inpainting. The core idea of diffusion models is to learn a generative model by reversing a diffusion process that gradually adds noise to the data. Using the famous [DDPM](https://arxiv.org/abs/2006.11239) as an example, given a data sample from a real data distribution $$\mathbf{x}_0 \sim \mathcal{D}(x)$$, we use a **forward process** to gradually perturb the data with small amounts of Gaussian noise over $$T$$ steps:
 
 $$
-\begin{align}
-q(\mathbf{x}_t | \mathbf{x}_{t-1}) &= \mathcal{N}(\mathbf{x}_t; \sqrt{1 - \beta_t} \mathbf{x}_{t-1}, \beta_t \mathbf{I}) \\
-q(\mathbf{x}_{1:T} | \mathbf{x}_0) &= \prod_{t=1}^T q(\mathbf{x}_t | \mathbf{x}_{t-1})
-\end{align}
+\begin{equation}
+q(\mathbf{x}_t | \mathbf{x}_{t-1}) = \mathcal{N}(\mathbf{x}_t; \sqrt{1 - \beta_t} \mathbf{x}_{t-1}, \beta_t \mathbf{I}) 
+\end{equation}
+$$
+$$
+\begin{equation}
+q(\mathbf{x}_{1:T} | \mathbf{x}_0) = \prod_{t=1}^T q(\mathbf{x}_t | \mathbf{x}_{t-1})
+\end{equation}
 $$
 
 where $$\beta_t \in (0, 1)$$ is a variance schedule that controls the amount of noise added at each step. As $$T \to \infty$$, $$\mathbf{x}_T$$ approaches a sample from a standard Gaussian distribution:
 
-\begin{align}
+$$
+\begin{equation}
 \lim_{T \to \infty} \mathbf{x}_T \sim \mathcal{N}(0, \mathbf{I})
-\end{align}
+\end{equation}
+$$
 
 The **reverse process** then learns to gradually denoise the data, starting from pure noise $$\mathbf{x}_T \sim \mathcal{N}(0, \mathbf{I})$$ and working backwards, where $$\mu_\theta$$ and $$\Sigma_\theta$$ are learned by a fancy neural network model. Again, if you are not comfortable with these concepts, please refer to [Lilian's amazing blog](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/).
 
 $$
-\begin{align}
-p_\theta(\mathbf{x}_{0:T}) &= p(\mathbf{x}_T) \prod_{t=1}^T p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) \\
-p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) &= \mathcal{N}(\mathbf{x}_{t-1}; \mu_\theta(\mathbf{x}_t, t), \Sigma_\theta(\mathbf{x}_t, t))
-\end{align}
+\begin{equation}
+p_\theta(\mathbf{x}_{0:T}) = p(\mathbf{x}_T) \prod_{t=1}^T p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t)
+\end{equation}
+$$
+
+
+$$
+\begin{equation}
+p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1}; \mu_\theta(\mathbf{x}_t, t), \Sigma_\theta(\mathbf{x}_t, t))
+\end{equation}
 $$
 
 <div class="row mt-2">
@@ -95,7 +107,7 @@ $$
     </div>
 </div>
 <div class="caption">
-    Figure 1. The Markov chain of forward (reverse) diffusion process of generating a sample by slowly adding (removing) noise. (Image source: <a href="https://arxiv.org/abs/2006.11239">Ho et al. 2020</a> with a few additional annotations)
+    Figure 2. The Markov chain of forward (reverse) diffusion process of generating a sample by slowly adding (removing) noise. (Image source: <a href="https://arxiv.org/abs/2006.11239">Ho et al. 2020</a> with a few additional annotations)
 </div>
 
 
@@ -107,7 +119,7 @@ Think about an image. It's made of pixels, and each pixel has colour values (lik
 
 Now, consider text. Language is composed of discrete units – words or tokens selected from a finite vocabulary (e.g., "cat", "dog", "runs"). You can't simply add "0.1 Gaussian noise" to the word "cat" and get something meaningful that's slightly different but still related in a smooth, continuous way. Applying the original continuous noise formulation directly just doesn't work.
 
-This **discrete nature** of text is the core hurdle that requires specific adaptations, a challenge explored in models for discrete state-spaces like [Structured Denoising Diffusion Models (D3PM)](https://arxiv.org/abs/2107.03006). How do you define a "forward process" that gradually corrupts text into noise, and critically, a "reverse process" that a model can learn to invert step-by-step?
+This **discrete nature** of text is the core hurdle that requires specific adaptations. How do you define a "forward process" that gradually corrupts text into noise, and critically, a "reverse process" that a model can learn to invert step-by-step?
 
 Researchers have developed clever workarounds to bridge this gap:
 
@@ -121,7 +133,73 @@ Researchers have developed clever workarounds to bridge this gap:
 3. **Discrete Diffusion:** Now a few *bold geniuses* are thinking, "Hey, if tokens are discrete, why not make the diffusion process discrete as well?". So we have discrete diffusion over categorical supports. [Eminel et al, 2021](https://arxiv.org/pdf/2102.05379) introduces extensions of diffusion for categorical data such as language. We model each token as a probability mass vector distributing over $$p \in \mathbb{R}^{V}$$, where $$V$$ is the size of the vocabulary and use transition matrices $$\mathbf{Q}$$ to model transitions between denoising timestops, for example $$q(\mathbf{x}_t |\mathbf{x}_{t-1}) = Categorical(\mathbf{x}_t; \mathbf{p}=\mathbf{x}_{t-1}\mathbf{Q}_t)$$.
 Models like [D3PM](https://arxiv.org/abs/2107.03006), and [SEDD](https://arxiv.org/pdf/2310.16834) (*ICML 2024 Best Paper*) follows this path.
 
-
-The reverse process then becomes about learning to **undo** this specific type of discrete corruption. For instance, the model learns to predict the original tokens at the `[MASK]` positions or identify and correct the randomly substituted tokens (as explored in the [Diffusion-LM paper](https://arxiv.org/abs/2205.14217)), iteratively refining the sequence from a highly corrupted state back to coherent text. So, while the core *idea* of diffusion (iterative refinement from noise) remains, the *mechanisms* for the forward (corruption) and reverse (denoising) processes have to be specifically adapted for the discrete world of language. 
+The reverse process then becomes about learning to **undo** this specific type of discrete corruption. For instance, the model learns to predict the original tokens at the `[MASK]` positions or identify and correct a randomly sampled variable into meaningful tokens , iteratively refining the sequence from a highly corrupted state back to coherent text. So, while the core *idea* of diffusion (iterative refinement from noise) remains, the *mechanisms* for the forward (corruption) and reverse (denoising) processes have to be specifically adapted for the discrete world of language. 
 
 Now I will select the representative work of each of these methods to further explain the concept of DLM.
+
+#### **Embedding-Level diffusion -- where it begins**
+
+*As far as I know*, [Diffusion-LM](https://arxiv.org/abs/2205.14217) is probably the first, influencial work that starts the era of DLM. Now suppose we have a sequence of words $$\mathbf{w} = \{w_1, w_2, \ldots, w_n\}$$, an embedding fucntion is defined to map each word to a word vector $$Emb(w_i) \in \mathbb{R}^{d}$$. So the entire sequence weill be encoded into $$\mathbf{x}_0 = Emb(\mathbf{w}) \in \mathbb{R}^{d}$$. So yeah! There we go, we have a **continuous** space where we can run the conventional diffusion models. We use the typical simplified KL-divergence term in evidence lower bound (which I will not reiterate here) to derive a loss function.
+
+$$
+\begin{equation}
+\mathcal{L}_{simple}(\mathbf{x}_0)  = \Sigma_{t=1}^T \underset{q(\mathbf{x}_t | \mathbf{x}_0)}{\mathbb{E}} ||\mu(\mathbf{x}_t, t) - \hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)||^2
+\end{equation}
+$$
+
+But don't forget, we need to convert the embedding back to discrete tokens, you will say this is easy, let's just have another function transform them back to tokens. Indeed, that's how it's done. In Li's implementation, they model theses steps into the diffusion process as an extra timestep. As shown in the figure below, the forward process consists of an additional Markov transition to obtain the embeddings parametrized by 
+$$q_{\phi}(\mathbf{x}_0 | \mathbf{w}) = \mathcal{N}(Emb(\mathbf{w}); \sigma_{0} I)$$
+. Then in the reverse process you will have an additional trainble **rounding** step, parameterized by 
+$$p_{\theta}(\mathbf{w} | \mathbf{x}_0) = \prod_{i=1}^n p_{\theta}(w_i | x_i)$$
+, where $$p_{\theta}(w_i | x_i)$$ is a simple softmax distribution.
+
+<div class="row mt-2">
+    <div class="col-sm-10 col-md-8 mt-4 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/diffusion-lm.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 3. A graphical model representing the forward and reverse diffusion processes for Diffusion-LM. (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2020</a>)
+</div>
+
+Then we can adjust the loss function accordingly. For end-to-end training, we will have the final loss function as below.
+
+$$
+\begin{equation}
+\mathcal{L}_{simple}^{e2e}(\mathbf{w}) = \underset{q_{\phi}(\mathbf{x}_{0:T} | \mathbf{w})}{\mathbb{E}} \left[\underbrace{\mathcal{L}_{simple}(\mathbf{x}_0)}_{\text{diffusion Loss}} + ||Emb(\mathbf{w}) - \overbrace{\mu_{\theta}(\mathbf{x}_1, 1)}^{\text{predicted }\mathbf{x}_0}||^2  - \underbrace{\log p_{\theta}(\mathbf{w} | \mathbf{x}_0)}_{\text{rounding}} \right]
+\end{equation}
+$$
+
+And then you can do the fancy conditioning and controlled generation during your inference now. For example, you could have a separate neural network classifier and a class condition $$\mathbf{c}$$. During the backward process, you obtain the $$\mathbf{x}_{t-1}$$ with respect to the posterior probability using the gradient update below.
+
+
+$$
+\begin{equation}
+\nabla_{\mathbf{x}_{t-1}} \log p(\mathbf{x}_{t-1} | \mathbf{x}_{t}, \mathbf{c}) = \nabla_{\mathbf{x}_{t-1}} \log p(\mathbf{x}_{t-1} | \mathbf{x}_{t}) + \underbrace{\nabla_{\mathbf{x}_{t-1}} \log p(\mathbf{c} | \mathbf{x}_{t-1})}_{\text{classifier guidance}}
+\end{equation}
+$$
+
+
+<div class="row mt-2">
+    <div class="col-sm-10 col-md-8 mt-4 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/diffusion-lm-classifier.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 4. For controllable generation, we iteratively perform gradient updates on these continuous latents to optimize for fluency (parametrized by Diffusion-LM) and satisfy control requirements (parametrized by a classifier). (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2020</a>)
+</div>
+
+
+<span style="color:red">This rounding is a key challenge in embedding-level diffusion models. The discretization step can lead to errors that accumulate across the diffusion process, as the embedding space is not uniformly populated with valid tokens.</span> 
+
+
+
+We can derive the closed-form forward process easily by perturbing 
+ a word? What about the probabilistic 
+assignment? In Diffusion-LM, they use rounding: In the reverse process, at every time step, we assign the current noisy embedding to the nearest word in the vocabulary (using cosine similarity as the distance metric).
+
+```text
+\mathbf{w}_{t-1} = \text{argmin}_{w \in \text{Vocab}} \text{distance}(Emb(w), \mathbf{x}_{t-1})
+```
+
+<span style="color:red">This rounding is a key challenge in embedding-level diffusion models. The discretization step can lead to errors that accumulate across the diffusion process, as the embedding space is not uniformly populated with valid tokens.</span>

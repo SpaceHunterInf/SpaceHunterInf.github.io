@@ -59,7 +59,7 @@ Autoregressive model is extremely successful nowadays, so why do we still need a
 
 * **(Potential) Advantage of DLM**
     - **NAR** As sequence are generated holistically, you can fix and correct previous mistakes and refine the sequence as a whole.
-    - **Controllability** Diffusion models are known to provide simple, training efficient style controlls using either classifier free guidance or classifier based guidance. Such controllability can be easily extended to DLM, where we can control the style of generation using the same techniques ([Prafulla et al., 2021](https://arxiv.org/abs/2105.05233), [Radford et al., 2021](https://arxiv.org/abs/2103.00020)). We can also take this a step further to even more fine-grained controles in lengths, specific text editing, infillings because the model works on the whole sequence representation iteratively ([Li et al, 2023](https://arxiv.org/abs/2205.14217), [Nie et al., 2025](https://arxiv.org/abs/2502.09992),). This may also extends to tasks with stronger structural constraints (eg., code, table).
+    - **Controllability** Diffusion models are known to provide simple, training efficient style controlls using either classifier free guidance or classifier based guidance. Such controllability can be easily extended to DLM, where we can control the style of generation using the same techniques ([Prafulla et al., 2021](https://arxiv.org/abs/2105.05233), [Radford et al., 2021](https://arxiv.org/abs/2103.00020)). We can also take this a step further to even more fine-grained controles in lengths, specific text editing, infillings because the model works on the whole sequence representation iteratively ([Li et al, 2022](https://arxiv.org/abs/2205.14217), [Nie et al., 2025](https://arxiv.org/abs/2502.09992),). This may also extends to tasks with stronger structural constraints (e.g., code, table).
     - **Diversity** Can produce more diverse outputs compared to beam search in AR. *You just need to sample different initial noise.*
     - **Speed Up** Poential for faster generation as stops *could* be paralleilized, as tokens are generated all-together, instead of waiting for previous outputs iteratively.
 
@@ -82,7 +82,7 @@ where $$\beta_t \in (0, 1)$$ is a variance schedule that controls the amount of 
 
 $$
 \begin{equation}
-\lim_{T \to \infty} \mathbf{x}_T \sim \mathcal{N}(0, \mathbf{I})
+\lim_{T \to \infty} \mathbf{x}_T \approx \mathcal{N}(0, \mathbf{I})
 \end{equation}
 $$
 
@@ -132,6 +132,7 @@ Researchers have developed clever workarounds to bridge this gap:
     * **Hybrids:** Combining these or other discrete corruption methods.
 3. **Discrete Diffusion:** Now a few *bold geniuses* are thinking, "Hey, if tokens are discrete, why not make the diffusion process discrete as well?". So we have discrete diffusion over categorical supports. [Eminel et al, 2021](https://arxiv.org/pdf/2102.05379) introduces extensions of diffusion for categorical data such as language. We model each token as a probability mass vector distributing over $$p \in \mathbb{R}^{V}$$, where $$V$$ is the size of the vocabulary and use transition matrices $$\mathbf{Q}$$ to model transitions between denoising timestops, for example $$q(\mathbf{x}_t |\mathbf{x}_{t-1}) = Categorical(\mathbf{x}_t; \mathbf{p}=\mathbf{x}_{t-1}\mathbf{Q}_t)$$.
 Models like [D3PM](https://arxiv.org/abs/2107.03006), and [SEDD](https://arxiv.org/pdf/2310.16834) (*ICML 2024 Best Paper*) follows this path.
+4. 🔥🖼️👊  **The Maverick--Text in Image:** *"Discrete text? What text? It's an image!"* I personally wish you to checkout this [GlyphDiffusion](https://arxiv.org/pdf/2304.12519). Instead of dealing with the discrepancy, they bypassed by rendering the target text as a glyph image containing visual language content 🤣.
 
 The reverse process then becomes about learning to **undo** this specific type of discrete corruption. For instance, the model learns to predict the original tokens at the `[MASK]` positions or identify and correct a randomly sampled variable into meaningful tokens , iteratively refining the sequence from a highly corrupted state back to coherent text. So, while the core *idea* of diffusion (iterative refinement from noise) remains, the *mechanisms* for the forward (corruption) and reverse (denoising) processes have to be specifically adapted for the discrete world of language. 
 
@@ -159,10 +160,10 @@ $$p_{\theta}(\mathbf{w} | \mathbf{x}_0) = \prod_{i=1}^n p_{\theta}(w_i | x_i)$$
     </div>
 </div>
 <div class="caption">
-    Figure 3. A graphical model representing the forward and reverse diffusion processes for Diffusion-LM. (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2020</a>)
+    Figure 3. A graphical model representing the forward and reverse diffusion processes for Diffusion-LM. (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2022</a>)
 </div>
 
-Then we can adjust the loss function accordingly. For end-to-end training, we will have the final loss function as below.
+Then we can adjust the loss function accordingly. For end-to-end training, we will have the final loss function as below. During the reverse process, you run the inferece by sampling a random embedding sequence containing $$n$$ token embeddings (fixed, the same as in the training process) and gradually remove the noise.
 
 $$
 \begin{equation}
@@ -170,8 +171,11 @@ $$
 \end{equation}
 $$
 
-And then you can do the fancy conditioning and controlled generation during your inference now. For example, you could have a separate neural network classifier and a class condition $$\mathbf{c}$$. During the backward process, you obtain the $$\mathbf{x}_{t-1}$$ with respect to the posterior probability using the gradient update below.
+So, everything seems extremely straightforward right? Or does it? Unfortunately, no 😅. The conversion between continous embedding space and discrete tokens is non-trivial, harder than you think. <span style="color:red">This rounding is a key challenge in token embedding-level diffusion models. The discretization step can lead to errors that accumulate across the diffusion process, as the embedding space is not uniformly populated with valid tokens.</span> *Well isn't this the notorious data sparsity revisited.*
 
+In the paper, there is a major chapter talking about the techniques of how they managed to reduce the rounding error to obtain admissible outputs. For example using reparameterisation trick to make sure every term in the loss models $$\mathbf{x}_0$$ explicitly. They also introduce a **clamping trick** that is maping the predicted vector $$\mathbf{x}_t$$ to its nearest word embedding sequence in every reverse diffusion sampling step. Still, a lot of work needs to be done in the future for the sake of generation quality.
+
+Back to the model, with the diffusion pipeline, you can do the fancy conditioning and controlled generation during your inference now. For example, you could have a separate neural network classifier and a class condition $$\mathbf{c}$$. During the backward process, you obtain the $$\mathbf{x}_{t-1}$$ with respect to the posterior probability using the gradient update below.
 
 $$
 \begin{equation}
@@ -179,27 +183,26 @@ $$
 \end{equation}
 $$
 
-
 <div class="row mt-2">
     <div class="col-sm-10 col-md-8 mt-4 mt-md-0 mx-auto">
         {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/diffusion-lm-classifier.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
 <div class="caption">
-    Figure 4. For controllable generation, we iteratively perform gradient updates on these continuous latents to optimize for fluency (parametrized by Diffusion-LM) and satisfy control requirements (parametrized by a classifier). (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2020</a>)
+    Figure 4. For controllable generation, we iteratively perform gradient updates on these continuous latents to optimize for fluency (parametrized by Diffusion-LM) and satisfy control requirements (parametrized by a classifier). (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2022</a>)
 </div>
 
+The paper provides many experiments for controlled generation (e.g., semantics, length, POS and etc.). I want to mention about **infilling** specifically. That is during the inference process, instead of denoising all the embeddings, some context embeddings are given and fixed (e.g., $$\mathbf{x}_t = $$`[w_1] [noise] [w_2]`), the diffusion model will mask the gradient of other tokens, only generated the noised token in the middle. However, the other embeddings are used together as conditions naturally during the reverse sampling, as a **classifier-free guidance**. And you, my clever reader, immediately understands how traditional sequence-to-sequence task can be modelled by giving the input as left contexts only.
 
-<span style="color:red">This rounding is a key challenge in embedding-level diffusion models. The discretization step can lead to errors that accumulate across the diffusion process, as the embedding space is not uniformly populated with valid tokens.</span> 
+[GENIE](https://arxiv.org/pdf/2212.11685) is the first pre-trained DLM (*again, as I know*) following this token embedding-level diffusion. The model uses **continuous paragraph denoise** objective for pre-training. The object first applied a hybrid noising techniques to the original text, including token masking (e.g., `[w_1] [MASK] [w_2]`) and forward diffusion process sampling, then ask the model to recover the clean original text.
 
+<div class="row mt-2">
+    <div class="col-sm-10 col-md-8 mt-4 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/GENIE.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 5. The framework of GENIE. Source sequence is encoded as the condition of the transformer DLM through cross attention. DLM restores the randomly initial Gaussian noise to the output text through the iterative denoising and grounding process (Image source: <a href="https://arxiv.org/pdf/2212.11685">Lin et al., 2022</a>)
+</div>
 
-
-We can derive the closed-form forward process easily by perturbing 
- a word? What about the probabilistic 
-assignment? In Diffusion-LM, they use rounding: In the reverse process, at every time step, we assign the current noisy embedding to the nearest word in the vocabulary (using cosine similarity as the distance metric).
-
-```text
-\mathbf{w}_{t-1} = \text{argmin}_{w \in \text{Vocab}} \text{distance}(Emb(w), \mathbf{x}_{t-1})
-```
-
-<span style="color:red">This rounding is a key challenge in embedding-level diffusion models. The discretization step can lead to errors that accumulate across the diffusion process, as the embedding space is not uniformly populated with valid tokens.</span>
+Notably, GENIE doesn't use infilling as the default sequence-to-sequence generation method. Instead, it is using a more Encoder-Decoder approach (yes, like BART or T5), which is another analogues of classifier-free guidance. Similar rounding techniques is applied, they are using an effective KNN algorithm to retreive closets word embedding of each token during reverse sampling and apply rounding to the closest learnt word embedding.

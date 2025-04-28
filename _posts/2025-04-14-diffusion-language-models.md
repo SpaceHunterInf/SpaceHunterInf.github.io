@@ -140,6 +140,7 @@ Now I will select the representative work of each of these methods to further ex
 
 #### **Embedding-Level diffusion -- where it begins**
 
+##### **1.Token-level Embeddings**
 *As far as I know*, [Diffusion-LM](https://arxiv.org/abs/2205.14217) is probably the first, influencial work that starts the era of DLM. Now suppose we have a sequence of words $$\mathbf{w} = \{w_1, w_2, \ldots, w_n\}$$, an embedding fucntion is defined to map each word to a word vector $$Emb(w_i) \in \mathbb{R}^{d}$$. So the entire sequence weill be encoded into $$\mathbf{x}_0 = Emb(\mathbf{w}) \in \mathbb{R}^{d}$$. So yeah! There we go, we have a **continuous** space where we can run the conventional diffusion models. We use the typical simplified KL-divergence term in evidence lower bound (which I will not reiterate here) to derive a loss function.
 
 $$
@@ -163,7 +164,7 @@ $$p_{\theta}(\mathbf{w} | \mathbf{x}_0) = \prod_{i=1}^n p_{\theta}(w_i | x_i)$$
     Figure 3. A graphical model representing the forward and reverse diffusion processes for Diffusion-LM. (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2022</a>)
 </div>
 
-Then we can adjust the loss function accordingly. For end-to-end training, we will have the final loss function as below. During the reverse process, you run the inferece by sampling a random embedding sequence containing $$n$$ token embeddings (fixed, the same as in the training process) and gradually remove the noise.
+Then we can adjust the loss function accordingly. For end-to-end training, we will have the final loss function as below. During the reverse process, you run the inferece by sampling a random embedding sequence containing $$n$$ token embeddings (fixed, the same as in the training process) and gradually remove the noise. You are always predicting $$n$$ embeddings together, as the diffusion model requires a fixed shape I/O (A bit wasteful when the sequence is underfull right? We will talk about it later.). 
 
 $$
 \begin{equation}
@@ -206,3 +207,64 @@ The paper provides many experiments for controlled generation (e.g., semantics, 
 </div>
 
 Notably, GENIE doesn't use infilling as the default sequence-to-sequence generation method. Instead, it is using a more Encoder-Decoder approach (yes, like BART or T5), which is another analogues of classifier-free guidance. Similar rounding techniques is applied, they are using an effective KNN algorithm to retreive closets word embedding of each token during reverse sampling and apply rounding to the closest learnt word embedding.
+
+##### **2. Higher-level Embeddings**
+
+To tackle this **rounding error** of translating predicted word-embeddings to discrete tokens, attempts have been made to bring diffusion to high-level semantic latent space (e.g., sentences, paragraphs). The diffusion will predict some latent representation of a piece of text, and a separate autoregressive decoder is used for decoding the representation back to text. We use the work of Lovelace et al., Latent Diffusion For Language Generation ([LD4LG](https://arxiv.org/abs/2212.09462)) as an example to explain the concept.
+
+<div class="row mt-2">
+    <div class="col-sm-10 col-md-8 mt-4 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/LD4LG.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 6. Overview of Latent Diffusion For Language Generation (Image source: <a href="https://arxiv.org/abs/2212.09462">Lovelace et al., 2023</a>)
+</div>
+
+Firstly, an encoder model (e.g. BART or T5 Encoder) $$Enc()$$ to convert the piece of text $$\mathbf{w} = {w_1, \ldots, w_n}$$ into hidden states, $$Enc(\mathbf{w}) \in \mathbb{R}^{n \times h_{lm}}$$, where $$h_{lm}$$ is the hidden state dimension of your encoder (usually 768 or 1024...). Notice that, $$n$$ here represents the variable token length of the text, and the diffusion requires a fixed shape representation. In the token-level embedding diffusion, this is a constraint for the context window. For higher-level embeddings, an additional pooling/compressing unit $$f()$$ is used to project the hidden states to a fixed-length latent representation $$\mathbf{z} = f(Enc(\mathbf{w})), \mathbf{z} \in \mathbb{R}^{k \times h_{rep}}$$, where $$k$$ and $$h_{rep}$$ are the dimension of the latent representation (hyperparameters). Typically you want $$k<n$$ and $$ h_{rep} << h_{lm}$$, as you don't want a very sparse latent representation, a more compact latent space helps diffusion model to learn the distribution more easily.
+
+Then the diffusion model 
+$$R(\cdot |\theta)$$
+, which is usually a diffusion transformer ([DiT](https://arxiv.org/abs/2212.09748)) deployed to learn how to recover $$\mathbf{z}_0$$ from its noised version over the forward diffusion process as usual.
+
+$$
+\begin{equation}
+    \mathcal{L}(\theta_{R}) = \sum_{t=1}^T \underset{q(\mathbf{z}_{t} | \mathbf{z}_0)} {\mathbb{E}} \left\| \hat{\mathbf{z}}_{t} - \mathbf{z}_t \right\|^2_2
+\end{equation}
+$$
+
+For inference, you sample a latent representation from gaussian noise, and do the reverse process as usual $$\hat{\mathbf{z}}_{t-1} =  R(\hat{\mathbf{z}}_t, t); \theta_{R}$$. Conditioning can be added to forward and backward process similarly as well. Then we employ a reconstruction unit $$g()$$, projecting the latent state back to the dimension of the backbone language model hidden state, using the decoder to generate text $$Dec(g(\mathbf{z}_0))$$. In this case, as we are always doing diffusion over the continuous latent space of high level semantics, we bypass the phase of rounding.
+
+**BUT**, again, is it that simple? Actually, no ☹️. <span style="color:red"> It is non-trivial to find a good latent representation for text, not mentioning generate one from noisy examples. </span> For example, if I perturb a latent representation of sentence `It is sunny today` a bit, in this case, what are we doing here? Just as it's name that high-level semantic diffusion, it should preturb it's semantics, not surface forms (tokens) right? We want to make sure I add a small noise to the sentence, it should give me some thing similar in meaning like `Today is sunny` or `Today has sun` some thing like that, definitely not `It isn't sunny today` or `It is savvy tody` which is similar by appearance but not in meaning. But this is extremely hard to do, as a the meaning of a paragraph of text is extremely rich and diverse, how are we suppose to regularize that? This pose a great challenge for high-level semantic diffusion doing long-form generation.
+
+So back to square one, what's the definition of a good latent representation for high-level semantics diffusion? In [Zhang et al., 2024](https://arxiv.org/pdf/2306.02531) gives a formal definition of this, describing the desirata in three aspects.
+
+- **Low conversion error** Give you a piece of text $$\mathbf{w}$$, we can transform it into latent representations and convert it back, $$\tilde{\mathbf{w}} = Dec(g(f(Enc(\mathbf{w}))))$$. The difference between $$\mathbf{w}$$ and $$\tilde{\mathbf{w}}$$ should be minimal, or none. However this is not very achievable when $$\mathbf{w}$$ is long. The hyperparameter $$k, h_{rep}$$ are fixed, when we are doing projections, we are losing information. The longer the sequence, the more information is lost, right?
+
+- **Local Smoothness** Consider if a person stutters or drop a few minor words while speaking, you can still recover what the person is trying to convey. That said, given a piece of text $$\mathbf{w}$$, and its slightly variant version $$\mathbf{w'}$$, their encoded latent representation should not differ to much, $$\mathbf{z}_{w} \approx \mathbf{z}_{w'}$$.
+
+- **Distributional Smoothness** In the high level latent space, we want the meanings of paragraphs are distributed smoothly. That is consider you have a piece of text $$\mathbf{w}$$ and it's latent representation $$\mathbf{z}_{w}$$, in the latent space it should be closer to similar meanings, like paraphrases of $$\mathbf{w}$$. When we are preturbing the text with a small amount of text, the decoded representation shouldn't differ to much by its meaning, as mentioned above. Vice versa, text with different meanings should be far away from each other in the latent space. However, when the sequence gets longer it's hard to control this as it contains too much complex concepts and meanings. If we increase the size of the latent space, the diffusion model may face difficulty in learning a distribution, $$p(\mathbf{z})$$ that is highly multimodal, or has density that are associated with a large Lipchitz constant (i.e., has abrupt changes).
+
+So the fact is without proper regularization, the learned distribution may be susceptible to abrupt semantic changes due to small perturbations, increasing the difficulty of the task for the diffusion model and catastrophically corrupts the quality of decoded texts. So how do we fix this?
+
+[Zhu et al., 2024](https://arxiv.org/pdf/2412.11333) (*yeah that's me 🤪*) provides Segment-Level Diffusion. Extending the concept **patching** from image generation, we patch texts into segments (e.g. sentences, dialogue utterances). This way we have effectively control the length of text and the meanings in the segment. We further regulate the latent representations by doing additional training for representation learning, using contrastive learning, and adversial noise preturbation, ensuring local and distributional smoothness. The diffusion model will now predict multiple latent representations with one-to-one correspondence to each segments. These representations will be independently decoded in parallel.
+
+<div class="row mt-2">
+    <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/SLD.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 7. Overview of the training pipeline of SLD. In the first stage, gold output is divided into segments. In the second stage, we use contrastive and adversarial learning to ensure latent representations are robust to drastic semantic changes. Finally, we train a diffusion model as an inherent semantic planner conditioned on given inputs. (Image source: <a href="https://arxiv.org/pdf/2412.11333">Zhu et al., 2024</a>)
+</div>
+
+A contemporary work from Meta, [Large Concept Model](https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/) uses a similar paradigm. They are doing diffusion over concepts, which is the segment in my case. Do check their work out! They provide the model pre-trained on much more data than I have! *I was submitting mine for 15th of Dec 2024 ARR, but they released their paper on the 12th. Well I'd be lying if I say I am not a bit frustrated. But hey! This also proves my idea, our idea, is very promising! Hope this is helpful to you!*
+
+<div class="row mt-2">
+    <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/LCM.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Figure 8. Left: visualization of reasoning in an embedding space of concepts (task of summarization). Right: fundamental architecture of an Large Concept Model (LCM). Note that the LCM is a diffusion model! (Image source: <a href="https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/"> LCM Team 2024</a>)
+</div>

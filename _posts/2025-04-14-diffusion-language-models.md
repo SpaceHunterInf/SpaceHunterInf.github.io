@@ -72,10 +72,10 @@ Autoregressive models are insanely successful these days — so why bother with 
       In autoregressive models, if you make a mistake when predicting the current token, tough luck — you can't go back and fix it. Future predictions are based on that flawed token, causing errors to propagate and accumulate over time. This painful phenomenon is known as [error propagation](https://aclanthology.org/D18-1396/).
       
     - **Indirect Generation Control**:  
-      Controlling AR generation is tricky. Most methods rely on heavy training or hacks during decoding — and honestly, they're pretty inconvenient. For example, if you want to generate a passage of a certain length, you either have to train a separate length predictor or do fancy prompting. Other controls my rely on heuristics like [top-k sampling](https://arxiv.org/abs/1904.09751). And even then... there's no guarantee it'll work 😥.
+      Controlling AR generation is tricky. Most methods rely on heavy training or hacks during decoding — and honestly, they're pretty inconvenient. For example, if you want to generate a passage of a certain length, you either have to train a separate length predictor or do fancy prompting. Other controls may rely on heuristics like [top-k sampling](https://arxiv.org/abs/1904.09751). And even then... there's no guarantee it'll work 😥.
 
     - **Computational Constraints**:  
-      Token-by-token generation is slow and computationally expensive. Plus, the strict left-to-right setup limits tasks that require reverse reasoning — a problem known as the "[Reversal Curse](https://arxiv.org/abs/2309.12288)".
+      Token-by-token generation is slow because the model must wait for previous tokens to be fully decoded before predicting the next ones. Plus, the strict left-to-right setup limits tasks that require reverse reasoning — a problem known as the "[Reversal Curse](https://arxiv.org/abs/2309.12288)".
 
 ---
 
@@ -161,13 +161,13 @@ Researchers have developed some clever workarounds to bridge this gap:
 
  **Operating on Continuous Variables**  
 
-   One approach is to not work with the tokens themselves, but with their continuous variables. Traditional language models already produce well-constructed word embeddings and hidden layer outputs. We can leverage these representations to define a continuous forward process, where the model learns to predict the noise added to these continuous vectors at each step. This is similar to how diffusion models operate in the image domain — often working in the latent space of a VAE or similar architecture.
+   One approach is to not work with the words themselves, but with their embeddings, which are continuous. Traditional language models already produce well-constructed word embeddings and hidden layer outputs. We can leverage these representations to define a continuous forward process, where the model learns to predict the noise added to these continuous vectors at each step. This is similar to how diffusion models operate in the image domain — often working in the latent space of a VAE or similar architecture.
 
    * **Word Embedding (Token Level)**:  
      Noise *can* be added to word embedding vectors — a technique used in models like [Diffusion-LM](https://arxiv.org/abs/2205.14217) and the pre-trained DLM [GENIE](https://arxiv.org/abs/2212.11685). However, mapping potentially noisy embeddings back to specific discrete tokens at each step introduces its own complexities.
 
    * **Higher-Level Latent Representations**:  
-     Works like [PLANNER](https://arxiv.org/abs/2306.02531) and [LD4LG](https://arxiv.org/pdf/2212.09462) operate on latent representations of *paragraphs* of text. But these representations can be pretty fragile — even small noise can cause abrupt semantic shifts during reverse diffusion. **My own paper** [SLD](https://arxiv.org/abs/2412.11333) tackles this problem *cleverly* by introducing text-segmentation and improved representation learning techniques. Also worth checking out: Meta's [Large Concept Model](https://arxiv.org/pdf/2412.08821) — arguably the *ultimate form* of pre-trained DLMs following this path.
+     Works like [PLANNER](https://arxiv.org/abs/2306.02531) and [LD4LG](https://arxiv.org/pdf/2212.09462) operate on latent representations of *paragraphs* of text. But these representations can be pretty fragile — even small noise can cause abrupt semantic shifts during reverse diffusion. **My own paper** [SLD](https://arxiv.org/abs/2412.11333) tackles this problem *cleverly* by introducing text-segmentation and improved representation learning techniques. Also worth checking out: Meta's [Large Concept Model](https://arxiv.org/pdf/2412.08821), the existing pre-trained DLMs following this path.
 
 ---
 
@@ -233,13 +233,13 @@ Specifically, the training objective is:
 
 $$
 \begin{equation}
-\mathcal{L}_{simple}(\mathbf{x}_0) = \sum_{t=1}^T \underset{q(\mathbf{x}_t \mid \mathbf{x}_0)}{\mathbb{E}} \left[ \|\mu(\mathbf{x}_t, t) - \hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)\|^2 \right]
+\mathcal{L}_{simple}(\mathbf{x}_0) = \sum_{t=1}^T \underset{q(\mathbf{x}_t \mid \mathbf{x}_0)}{\mathbb{E}} \left[ \|\mu_{\theta}(\mathbf{x}_t, t) - \hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)\|^2 \right]
 \end{equation}
 $$
 
 ---
 
-But hold on — we can't forget about converting embeddings **back** into discrete tokens! You might think: *"Easy, let's just use another function to transform them back."*  And... you'd be mostly right. In Li's implementation, they model these steps into the diffusion process as an **extra timestep**. As shown in the figure below (👀), the forward process includes an additional Markov transition to obtain embeddings:
+But hold on — we can't forget about converting embeddings **back** into discrete tokens! You might think: *"Easy, let's just use another function to transform them back."*  And... you'd be mostly right. In [Li's implementation](https://github.com/XiangLi1999/Diffusion-LM), they model these steps into the diffusion process as an **extra timestep**. As shown in the figure below (👀), the forward process includes an additional Markov transition to obtain embeddings:
 
 $$
 q_{\phi}(\mathbf{x}_0 \mid \mathbf{w}) = \mathcal{N}(Emb(\mathbf{w}); \sigma_0^2 I)
@@ -304,7 +304,41 @@ $$
     Figure 4. For controllable generation, we iteratively perform gradient updates on these continuous latents to optimize for fluency (parametrized by Diffusion-LM) and satisfy control requirements (parametrized by a classifier). (Image source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2022</a>)
 </div>
 
-The paper also provides a bunch of experiments on controlled generation — including semantics, length, part-of-speech, and more.  
+The table below gives a demonstration of how Diffusion-LM outperforms traditional controlled generation paradigm (FUDGE, Fine-tuning) in review generation. The paper also provides a bunch of experiments on controlled generation — including syntax tree, length, part-of-speech, and more. 
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th style="border: 1px solid #000; padding: 4px;">target semantic content</th>
+      <th style="border: 1px solid #000; padding: 4px;">name : Travellers Rest Beefeater</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #000; padding: 4px;">FUDGE</td>
+      <td style="border: 1px solid #000; padding: 4px;">
+        <span style="color:red;">Clowns near Clare Hall</span> in riverside is a French coffee shop rated 5 out of 5
+      </td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 4px;">Diffusion-LM</td>
+      <td style="border: 1px solid #000; padding: 4px;">
+        <span style="color:red;">Green Man</span> is an Italian pub located in the city centre near Café UNK.
+      </td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 4px;">FT</td>
+      <td style="border: 1px solid #000; padding: 4px;">
+        <span style="color:green;">Travellers Rest Beefeater</span> is a reasonably priced restaurant that is family friendly.
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div class="caption">
+Table 1. Semantic control outputs for generating reviews for the target "Travellers Rest Beefeater" across different models. Generations adheres to control is highlighted in green, violations are highlighted in red. (Table source: <a href="https://arxiv.org/abs/2205.14217">Li et al. 2022</a>)
+</div>
+
+
 But I want to highlight **infilling** specifically, because it's super neat. 🧩 In this setting, during inference, instead of denoising *all* embeddings, some context embeddings are **given and fixed**.  For example: 
 $$\mathbf{x}_t = $$ 
 `[w_1] [MASK] [w_2]`. The diffusion model is told to only generate the noisy token in the middle. This is done by masking the gradients of the fixed tokens — so they stay untouched — while still using them as **context** during the reverse sampling process. In other words, the fixed tokens act as **classifier-free guidance**. And *you*, my clever reader, have probably already realized: this setup makes it easy to model traditional sequence-to-sequence tasks — just give the input as the left context!
@@ -327,7 +361,21 @@ The idea:
     Figure 5. The framework of GENIE. Source sequence is encoded as the condition of the transformer DLM through cross attention. DLM restores the randomly initial Gaussian noise to the output text through the iterative denoising and grounding process (Image source: <a href="https://arxiv.org/pdf/2212.11685">Lin et al., 2022</a>)
 </div>
 
-Notably, GENIE doesn't use infilling as its default sequence-to-sequence generation method. Instead, it follows more of an **Encoder-Decoder** approach (yep, think BART or T5) — which is actually another form of **classifier-free guidance**. The input is fed to the diffusion model, a transformer in this case, as cross-attention targets. Similar rounding techniques are applied here too: GENIE uses an efficient **KNN (k-nearest neighbors) algorithm** to retrieve the closest word embedding for each token during reverse sampling, then rounds to the nearest learned word embedding. This rounding step helps map noisy continuous vectors back to valid discrete tokens more effectively — though, as always, there's still room for improvement!
+Notably, GENIE doesn't use infilling as its default sequence-to-sequence generation method. Instead, it follows more of an **Encoder-Decoder** approach (yep, think BART or T5) — which is actually another form of **classifier-free guidance**. The input is fed to the diffusion model, a transformer in this case, as cross-attention targets. The equation below covers the key training step. They use a cross-attention transformer $$z_{\theta}$$ to predict the mean of word-embeddings for the next timestep. $$\mathbf{H}_s = \{\mathbf{h}_1, \mathbf{h}_2, \ldots, \mathbf{h}_n\}$$ is the encoder output of the $$n$$-token long input, as the guidance.
+
+$$
+\begin{equation}
+\mu_{\theta}^{t-1} = \frac{1}{\sqrt{\alpha_t}}
+\Biggl(
+  \mathbf{x_t}
+  \;-\;
+  \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,
+  z_{\theta}(\mathbf{x_t}, t, \mathbf{H}_s)
+\Biggr)
+\end{equation}
+$$
+
+GENIE's inference process is the same as Li's work. Similar rounding techniques are applied here too: GENIE uses an efficient **KNN (k-nearest neighbors) algorithm** to retrieve the closest word embedding for each token during reverse sampling, then rounds to the nearest learned word embedding. This rounding step helps map noisy continuous vectors back to valid discrete tokens more effectively — though, as always, there's still room for improvement!
 
 ##### **2. Higher-Level Embeddings**
 
@@ -427,11 +475,11 @@ So... how do we fix this?
 
 ---
 
-[Zhu et al., 2024](https://arxiv.org/pdf/2412.11333) (*yeah that’s me 🤪*) proposes **Segment-Level Diffusion (SLD)**. Inspired by the concept of **patching** in image generation, we "patch" the text into coherent segments — like individual **sentences**, **dialogue turns**, or **utterances**. This gives us much better control over both the **length** of each segment and the **semantic scope** of each latent/
+[Zhu et al., 2024](https://arxiv.org/pdf/2412.11333) (*yeah that’s me 🤪*) proposes **Segment-Level Diffusion (SLD)**. Inspired by the concept of **patching** in image generation, we "patch" the text into coherent segments — like individual **sentences**, **dialogue turns**, or **utterances**. This gives us much better control over both the **length** of each segment and the **semantic scope** of each latent representation.
 
 ---
 
-We further regulate the latent representations by doing additional training for representation learning, using **contrastive learning**, and **adversial noise preturbation**, ensuring local and distributional smoothness.
+We further regularise the latent representations by doing additional training for representation learning, using **contrastive learning**, and **adversial noise preturbation**, ensuring local and distributional smoothness.
 
 These tricks ensure both **local** and **distributional smoothness**, just like we talked about earlier. The diffusion model then learns to predict **multiple latent representations**,  with **one-to-one correspondence** to each segment. Each segment’s latent can then be **decoded independently — and in parallel!**  That means better generation quality *and (maybe)* faster inference (*in theory, we will talk about this in the end*). 💨
 
@@ -444,6 +492,8 @@ These tricks ensure both **local** and **distributional smoothness**, just like 
     Figure 7. Overview of the training pipeline of SLD. In the first stage, gold output is divided into segments. In the second stage, we use contrastive and adversarial learning to ensure latent representations are robust to drastic semantic changes. Finally, we train a diffusion model as an inherent semantic planner conditioned on given inputs. (Image source: <a href="https://arxiv.org/pdf/2412.11333">Zhu et al., 2024</a>)
 </div>
 
+As demonstrate in the figure above, our SLD pipeline contains three major components, segmentation, representation learning and diffusion LM training. Blue units are trainable neural networks. On the top left, a paragraph of desired output text, the storylines, are **segmented into sentences**. These sentences are encoded and projected to a compact latent space. To further regularise the latent representation, as shown in top right, we do **contrastive learning**. We generate paraphrases as positive samples pulling them together, and randomly sample out-of-domain text as negative samples pushing them apart. In addition, we add some **adversarial (worst case) noise** to perturb the representations, training decoding units to be more robust. The bottom part describes the diffusion model training, we use cross-attention transformer conditioning on inputs and ensures **1-to-1** correspondence between latent representations and sentences over this process. The representations of all segments are decoded **in-parallel** in the end.
+
 And you can see the importance of representation learning in the visualization below. Before the representation learning, the desired cluster of sentences (ROCStories) are not very distinguishable from other texts (CNN/Daily Mail), which makes the model susceptible to abrupt semantic changes during diffusion process. With regularization, it's much better. Adversial noise is to ensure we enhance the generation quality even better.
 
 <div class="row mt-2">
@@ -455,14 +505,7 @@ And you can see the importance of representation learning in the visualization b
     Comparison of PCA 2D projections of latent representations for sampled segmented sentences from ROCStories (Blue), their paraphrases (Green), and out-of-domain (OOD) sentences sampled from CNN/Daily Mail (Orange) under three training paradigms: Vanilla training, Noise Robust training, and Noise Robust + Contrastive learning. The red trajectory illustrates the denoising path of the sentence 'David noticed he had put on a lot of weight recently.' The trajectory is annotated with noise ratios, where 1.0 (Lighter Red) represents pure Gaussian noise and 0.0 (Darker Red) indicates no noise. (Image source: <a href="https://arxiv.org/pdf/2412.11333">Zhu et al., 2024</a>)
 </div>
 
-A contemporary work from Meta, [Large Concept Model](https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/), uses a similar paradigm. They perform diffusion over **concepts** — which is pretty much the same idea as **segments** in my work. Definitely check out their paper! They provide a model pre-trained on way more data than I had access to.
-
----
-<span style="color:gray">
-*Fun fact:*  
-I submitted my paper for the **15th of Dec 2024 ARR**, and they released theirs on the **12th of Dec**. I'd be lying if I said I wasn’t a *bit* frustrated... But hey — this also proves that **this idea, is very promising**! 🚀 Hope this whole discussion has been helpful to you!
-</span>
-
+A contemporary work from Meta, [Large Concept Model](https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/), uses a similar paradigm. They perform diffusion over **concepts** — which is pretty much the same idea as **segments** in my work. Definitely check out their paper! They provide a model pre-trained on way more data than I had access to. In their work, they use a multimodal and multilingual encoder [SONAR](https://arxiv.org/abs/2308.11466) (*definitely more powerful than the Flan-T5 encoder we were using*) to generate concept embeddings.
 
 <div class="row mt-2">
     <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
@@ -485,7 +528,7 @@ However, fair warning: both are a bit mathematically dense and terse for a light
 
 ---
 
-As mentioned earlier, [D3PM](https://arxiv.org/abs/2107.03006) introduces a **Markov forward process** over tokens, using a sequence of **categorical distributions** constructed through multiplication of transition matrices $$\mathbf{Q}_t$$ across $$T$$ discrete timesteps. Concretely, we have a series of matrix multiplications:
+[D3PM](https://arxiv.org/abs/2107.03006) introduces a **Markov forward process** over tokens, using a sequence of **categorical distributions** constructed through multiplication of transition matrices $$\mathbf{Q}_t$$ across $$T$$ discrete timesteps. Concretely, we have a series of matrix multiplications:
 
 $$
 \begin{equation}
@@ -495,14 +538,6 @@ $$
 
 This gradually transforms the initial sequence $$\mathbf{x}_0$$ into a **stationary distribution** — i.e., full corruption.
 
-<div class="row mt-2">
-    <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
-        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/MDLM.png" class="img-fluid rounded z-depth-1" %}
-    </div>
-</div>
-<div class="caption">
-    (Left) Masked diffusion language model (MDLM) is trained using a weighted average of masked cross entropy losses. (Top Right) In comparison to masked language models (MLM), MDLM's objective correspond to a principled variational lower bound, and supports generation via ancestral sampling.(Bottom Right) Perplexity (PPL) on One Billion Words benchmark. (Image source: <a href="https://arxiv.org/abs/2406.07524v2"> Sahoo et al., 2024</a>)
-</div>
 
 In their work, tokens are represented as: 
 $$
@@ -514,8 +549,6 @@ They define $$\text{Cat}(\cdot; \boldsymbol{\pi})$$ as a **categorical distribut
 $$
 \mathbf{m} \in \mathcal{V}
 $$
-
----
 
 During the **forward process**, they interpolate discrete diffusion by gradually converting $$\mathbf{x}$$ into increasingly noisy variables $$\mathbf{z}_t$$. The marginal distribution of $$\mathbf{z}_t$$ conditioned on the original $$\mathbf{x}$$ is:
 
@@ -529,7 +562,16 @@ Here, $$\alpha_t$$ is a scalar from the **noise schedule**, just like in standar
 
 ---
 
-In the **masked diffusion** variant, we set: 
+<div class="row mt-2">
+    <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
+        {% include figure.liquid loading="eager" path="assets/img/diffusionlm_blog/MDLM.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    (Left) Masked diffusion language model (MDLM) is trained using a weighted average of masked cross entropy losses. (Top Right) In comparison to masked language models (MLM), MDLM's objective correspond to a principled variational lower bound, and supports generation via ancestral sampling.(Bottom Right) Perplexity (PPL) on One Billion Words benchmark. (Image source: <a href="https://arxiv.org/abs/2406.07524v2"> Sahoo et al., 2024</a>)
+</div>
+
+In the [Sahoo et al.](https://arxiv.org/abs/2406.07524v2)'s **masked diffusion** variant, they set: 
 $$
 \boldsymbol{\pi} = \mathbf{m}
 $$
@@ -564,7 +606,7 @@ Great, right? In this case, they've successfully extended diffusion from the **c
 
 ---
 
-That said, note that the current design has **some limitations**. *While the prototype naturally inherits the constraints of an early-stage system, it still marks a major step forward in the field.* One issue is during **decoding**: Once a token is unmasked, it stays fixed. This isn’t ideal — especially in the **early stages of reverse diffusion**, when the paragraph is still mostly noise and the few decoded tokens are likely *not* optimal. But since they’re locked in place, the model must condition future generations on possibly bad guesses — causing the dreaded **error propagation** problem all over again. 😞 
+That said, note that the current design has some limitations. One issue is during **decoding**: Once a token is unmasked, it stays fixed. This isn’t ideal — especially in the **early stages of reverse diffusion**, when the paragraph is still mostly noise and the few decoded tokens are likely *not* optimal. But since they’re locked in place, the model must condition future generations on possibly bad guesses — causing the dreaded **error propagation** problem all over again. 😞 
 
 ---
 
@@ -586,7 +628,7 @@ Try [it](https://huggingface.co/spaces/multimodalart/LLaDA) out yourself!
 
 #### **Text-in-Image Diffusion? (Brain-teaser)**
 
-Think **computer vision** for a moment! 👀 These days, NLP and CV have been borrowing ideas from each other all the time — just look at [VAR](https://arxiv.org/abs/2404.02905), which brings autoregressive generation into image synthesis. So hey, if we’re already using **diffusion** (the most trending paradigm in CV), why not push the crossover even further? I’ll skip over some amazing CV works like [DeepFloyd IF](https://github.com/deep-floyd/IF) for the sake of conciseness. Instead, here’s a fun little brain-teaser to wrap things up: [**GlyphDiffusion**](https://arxiv.org/pdf/2304.12519v2).
+Think **computer vision** for a moment! 👀 These days, NLP and CV have been borrowing ideas from each other all the time — just look at [Tian et al., 2024](https://arxiv.org/abs/2404.02905)'s VAR, which brings autoregressive generation into image synthesis. So hey, if we’re already using **diffusion** (the most trending paradigm in CV), why not push the crossover even further? I’ll skip over some amazing CV works like [DeepFloyd IF](https://github.com/deep-floyd/IF) for the sake of conciseness. Instead, here’s a fun little brain-teaser to wrap things up: [**GlyphDiffusion**](https://arxiv.org/pdf/2304.12519v2).
 
 ---
 
@@ -653,7 +695,7 @@ But speed isn’t everything. There are **so many opportunities** with DLMs that
 
 ---
 
-Oh — and if you're curious to keep up with this fast-growing area, shout out to the people who keep a living list of all known [DLM papers on GitHub](https://github.com/bansky-cl/diffusion-nlp-paper-arxiv). Highly recommended if you want to go down the rabbit hole. 🐇📚
+Oh — and if you're curious to keep up with this fast-growing area, shout out to the people who keep up-to-date list of all known [DLM papers on GitHub](https://github.com/bansky-cl/diffusion-nlp-paper-arxiv). Highly recommended if you want to go down the rabbit hole. 🐇📚
 
 ##### **Epilogue**
 
@@ -679,3 +721,8 @@ Until next time...
 }
 ```
 
+---
+**Update 24/05/2025**
+1. Check out [Gemini Diffusion Model](https://deepmind.google/models/gemini-diffusion/)! Seems like this field is getting more and more attention! 
+2. Our paper [Segment-Level](https://arxiv.org/abs/2412.11333) Diffusion got accepted into **ACL 2025 Main**! See you in Vienna if you want to ask me anything!
+3. Special thanks to my amazing supervisor [Prof. Andreas Vlachos](https://andreasvlachos.github.io/) for helping me in the project, and proof reading this blog. Shout out to my lab mates [Suchir](https://suchirsalhan.github.io/) and [Zeb](https://www.cst.cam.ac.uk/people/zg258) for encouraging me writing this blog.

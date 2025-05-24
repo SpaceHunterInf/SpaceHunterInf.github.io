@@ -188,10 +188,10 @@ Researchers have developed some clever workarounds to bridge this gap:
      (Example: [LLaDA](https://arxiv.org/pdf/2502.09992) — an 8B-parameter pre-trained DLM that's currently trending.)
 
    * **Token Substitution**:  
-     Randomly replacing tokens with other tokens from the vocabulary.
+     Randomly replacing tokens with other tokens from the vocabulary. (Check out [Zou et al., 2023](https://arxiv.org/abs/2305.14671))
 
    * **Hybrids**:  
-     Combining masking, substitution, and other discrete corruption methods.
+     Combining masking, substitution, and other discrete corruption methods. (Check out [Yang et al., 2024](https://arxiv.org/abs/2209.00796))
 
 ---
 
@@ -667,7 +667,7 @@ The major challenge for DLMs right now is **inference efficiency** and **samplin
 - [**Adaptive Decay Sampling** (Tang et al., 2023)](https://arxiv.org/abs/2305.04465)  
 - [**Diffusion of Thoughts** (Ye et al., 2024)](https://arxiv.org/abs/2402.07754), where they use **ODE solvers** to speed up decoding  
 
-And hey, some people have *already* pulled it off! Check out Inception Labs’ [**Mercury Coder**](https://chat.inceptionlabs.ai/) — the first **fast commercial DLM** out in the wild!
+And hey, some people have *already* pulled it off! Check out Inception Labs’ [Mercury Coder](https://chat.inceptionlabs.ai/) — the first **fast commercial DLM** out in the wild!
 
 ---
 
@@ -681,7 +681,7 @@ But speed isn’t everything. There are **so many opportunities** with DLMs that
   tables, code, logical forms, and more.  
   Check out: [TabDiff](https://arxiv.org/pdf/2410.20626), [Mario et al., 2024](https://arxiv.org/abs/2407.02549)
 
-- The stochasticity of diffusion makes it a natural fit for **data augmentation** — especially useful for low-resource settings.  
+- The stochasticity of diffusion makes it a natural fit for **data augmentation** — especially useful for low-resource settings.
   [Chen et al., 2024](https://aclanthology.org/2024.emnlp-main.109.pdf) used it to improve **low-resource sentiment classification**.
 
 - We can also think about how would this change the uncertainty estimation? As you can do sampling more naturally, maybe shed lights on self-consistency and other confidence related decoding (**remasking**).

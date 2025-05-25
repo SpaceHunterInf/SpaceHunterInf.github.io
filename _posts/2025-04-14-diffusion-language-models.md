@@ -233,13 +233,13 @@ Specifically, the training objective is:
 
 $$
 \begin{equation}
-\mathcal{L}_{simple}(\mathbf{x}_0) = \sum_{t=1}^T \underset{q(\mathbf{x}_t \mid \mathbf{x}_0)}{\mathbb{E}} \left[ \|\mu_{\theta}(\mathbf{x}_t, t) - \hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)\|^2 \right]
+\mathcal{L}_{simple}(\mathbf{x}_0, \theta) = \sum_{t=1}^T \underset{q(\mathbf{x}_t \mid \mathbf{x}_0)}{\mathbb{E}} \left[ \|\mu_{\theta}(\mathbf{x}_t, t) - \hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)\|^2 \right],
 \end{equation}
 $$
 
 ---
 
-But hold on — we can't forget about converting embeddings **back** into discrete tokens! You might think: *"Easy, let's just use another function to transform them back."*  And... you'd be mostly right. In [Li's implementation](https://github.com/XiangLi1999/Diffusion-LM), they model these steps into the diffusion process as an **extra timestep**. As shown in the figure below (👀), the forward process includes an additional Markov transition to obtain embeddings:
+where $$\hat{\mu}(\mathbf{x}_t, \mathbf{x}_0)$$ is the closed from Gaussian, the noised variable in the forward process. $$\mu_{\theta}(\mathbf{x}_t, t)$$ is the predicted mean, computed by our trainable neural network, which is the diffusion model. But hold on — we can't forget about converting embeddings **back** into discrete tokens! You might think: *"Easy, let's just use another function to transform them back."*  And... you'd be mostly right. In [Li's implementation](https://github.com/XiangLi1999/Diffusion-LM), they model these steps into the diffusion process as an **extra timestep**. As shown in the figure below (👀), the forward process includes an additional Markov transition to obtain embeddings:
 
 $$
 q_{\phi}(\mathbf{x}_0 \mid \mathbf{w}) = \mathcal{N}(Emb(\mathbf{w}); \sigma_0^2 I)
@@ -270,7 +270,7 @@ Then we can adjust the loss function accordingly. For end-to-end training, we ar
 
 $$
 \begin{equation}
-\mathcal{L}_{simple}^{e2e}(\mathbf{w}) = \underset{q_{\phi}(\mathbf{x}_{0:T} | \mathbf{w})}{\mathbb{E}} \left[\underbrace{\mathcal{L}_{simple}(\mathbf{x}_0)}_{\text{diffusion Loss}} + ||Emb(\mathbf{w}) - \overbrace{\mu_{\theta}(\mathbf{x}_1, 1)}^{\text{predicted }\mathbf{x}_0}||^2  - \underbrace{\log p_{\theta}(\mathbf{w} | \mathbf{x}_0)}_{\text{rounding}} \right]
+\mathcal{L}_{simple}^{e2e}(\mathbf{w}, \theta) = \underset{q_{\phi}(\mathbf{x}_{0:T} | \mathbf{w})}{\mathbb{E}} \left[\underbrace{\mathcal{L}_{simple}(\mathbf{x}_0)}_{\text{diffusion Loss}} + ||Emb(\mathbf{w}) - \overbrace{\mu_{\theta}(\mathbf{x}_1, 1)}^{\text{predicted }\mathbf{x}_0}||^2  - \underbrace{\log p_{\theta}(\mathbf{w} | \mathbf{x}_0)}_{\text{rounding}} \right]
 \end{equation}
 $$
 
@@ -379,7 +379,7 @@ GENIE's inference process is the same as Li's work. Similar rounding techniques 
 
 ##### **2. Higher-Level Embeddings**
 
-To address the **rounding error** problem when translating predicted word embeddings back to discrete tokens, researchers have explored bringing diffusion into a **higher-level semantic latent space** — like at the sentence or paragraph level. In this setup, the diffusion model doesn’t operate directly on word embeddings. Instead, it predicts a latent representation of an entire piece of text.   Then, a separate **autoregressive decoder** is used to decode that latent into natural language. One representative example is the work by Lovelace et al., **Latent Diffusion for Language Generation** ([LD4LG](https://arxiv.org/abs/2212.09462)). We’ll use this to walk through how the concept works.
+To address the **rounding error** problem when translating predicted word embeddings back to discrete tokens, researchers have explored bringing diffusion into a **higher-level semantic latent space** — like at the sentence or paragraph level. In this setup, the diffusion model doesn’t operate directly on word embeddings. Instead, it predicts a latent representation of an entire piece of text. Then, a separate **autoregressive decoder** is used to decode that latent into natural language. So the rounding is bypassed as we are not handling discrete text during the diffusion process. One representative example is the work by Lovelace et al., **Latent Diffusion for Language Generation** ([LD4LG](https://arxiv.org/abs/2212.09462)). We’ll use this to walk through how the concept works.
 
 
 <div class="row mt-2">
@@ -505,7 +505,7 @@ And you can see the importance of representation learning in the visualization b
     Comparison of PCA 2D projections of latent representations for sampled segmented sentences from ROCStories (Blue), their paraphrases (Green), and out-of-domain (OOD) sentences sampled from CNN/Daily Mail (Orange) under three training paradigms: Vanilla training, Noise Robust training, and Noise Robust + Contrastive learning. The red trajectory illustrates the denoising path of the sentence 'David noticed he had put on a lot of weight recently.' The trajectory is annotated with noise ratios, where 1.0 (Lighter Red) represents pure Gaussian noise and 0.0 (Darker Red) indicates no noise. (Image source: <a href="https://arxiv.org/pdf/2412.11333">Zhu et al., 2024</a>)
 </div>
 
-A contemporary work from Meta, [Large Concept Model](https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/), uses a similar paradigm. They perform diffusion over **concepts** — which is pretty much the same idea as **segments** in my work. Definitely check out their paper! They provide a model pre-trained on way more data than I had access to. In their work, they use a multimodal and multilingual encoder [SONAR](https://arxiv.org/abs/2308.11466) (*definitely more powerful than the Flan-T5 encoder we were using*) to generate concept embeddings.
+A contemporaneous work from Meta, [Large Concept Model](https://ai.meta.com/research/publications/large-concept-models-language-modeling-in-a-sentence-representation-space/), uses a similar paradigm. They perform diffusion over **concepts** — which is pretty much the same idea as **segments** in my work. Definitely check out their paper! They provide a model pre-trained on way more data than I had access to. In their work, they use a multimodal and multilingual encoder [SONAR](https://arxiv.org/abs/2308.11466) (*definitely more powerful than the Flan-T5 encoder we were using*) to generate concept embeddings.
 
 <div class="row mt-2">
     <div class="col-sm-12 col-md-10 mt-6 mt-md-0 mx-auto">
@@ -705,7 +705,7 @@ I hope this blog helped you understand DLMs a little better, and maybe even spar
 
 ---
 
-If you found this blog helpfuln and want to do me a favour, you can cite my [Segment-Level Diffusion](https://arxiv.org/abs/2412.11333) paper — I've incorporated most of this blog's content into the related work section there. Also, feel free to leave a comment if you have any suggestions for improving the blog. I'd love to hear from you! 🙏
+If you found this blog helpful and want to do me a favour, you can cite my [Segment-Level Diffusion](https://arxiv.org/abs/2412.11333) paper — I've incorporated most of this blog's content into the related work section there. Also, feel free to leave a comment if you have any suggestions for improving the blog. I'd love to hear from you! 🙏
 
 Until next time...
 

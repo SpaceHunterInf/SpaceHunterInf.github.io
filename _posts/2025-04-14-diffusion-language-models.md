@@ -710,14 +710,14 @@ If you found this blog helpful and want to do me a favour, you can cite my [Segm
 Until next time...
 
 ```bibtex
-@misc{zhu2024segmentleveldiffusionframeworkcontrollable,
-  title={Segment-Level Diffusion: A Framework for Controllable Long-Form Generation with Diffusion Language Models}, 
-  author={Xiaochen Zhu and Georgi Karadzhov and Chenxi Whitehouse and Andreas Vlachos},
-  year={2024},
-  eprint={2412.11333},
-  archivePrefix={arXiv},
-  primaryClass={cs.CL},
-  url={https://arxiv.org/abs/2412.11333},
+@misc{zhu2025segmentleveldiffusionframeworkcontrollable,
+      title={Segment-Level Diffusion: A Framework for Controllable Long-Form Generation with Diffusion Language Models}, 
+      author={Xiaochen Zhu and Georgi Karadzhov and Chenxi Whitehouse and Andreas Vlachos},
+      year={2025},
+      eprint={2412.11333},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2412.11333}, 
 }
 ```
 

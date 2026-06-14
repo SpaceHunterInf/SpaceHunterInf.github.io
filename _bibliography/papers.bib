@@ -1,7 +1,35 @@
 ---
 ---
+@misc{zhu2026delichess,
+      title={DeliChess: A Multi-party Dialogue Dataset for Deliberation in Chess Puzzle Solving},
+      author={Xiaochen Zhu and Georgi Karadzhov and Tom Stafford and Andreas Vlachos},
+      year={2026},
+      eprint={2606.04987},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      selected={true},
+      preview={delichess.png},
+      abbr={arXiv},
+      html={https://arxiv.org/abs/2606.04987},
+      abstract="Multi-party dialogue is a critical setting for studying collaborative reasoning and decision-making, yet existing datasets rarely focus on structured, in-depth complex reasoning tasks. We introduce DeliChess, a novel dataset of group deliberation dialogues in which participants collaboratively solve multiple-choice chess puzzles. Each group first completes the puzzle individually, then engages in a multi-party discussion before submitting a revised collective answer. The dataset includes 107 dialogues with full transcripts, pre- and post-discussion choices, and metadata on puzzle difficulty and move quality. We evaluate performance using three metrics based on chess engine evaluations, and find that deliberation significantly improves group accuracy. We further analyse the role of probing utterances using a classifier trained on prior deliberation data. While probing makes group performance more variable after discussion, it does not consistently lead to better performance. Our dataset offers a rich testbed for modelling group reasoning, dialogue dynamics, and the resolution of differing perspectives and opinions in a well-defined strategic domain."
+}
+
+@misc{zhu2026demystifying,
+      title={Demystifying Multi-Agent Debate: The Role of Confidence and Diversity},
+      author={Xiaochen Zhu and Caiqi Zhang and Yizhou Chi and Tom Stafford and Nigel Collier and Andreas Vlachos},
+      year={2026},
+      eprint={2601.19921},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      selected={true},
+      preview={multi-agent-debate.png},
+      abbr={ACL 2026 Findings},
+      html={https://arxiv.org/abs/2601.19921},
+      abstract="Multi-agent debate (MAD) is widely used to improve large language model (LLM) performance through test-time scaling, yet recent work shows that vanilla MAD often underperforms simple majority vote despite higher computational cost. We identify two key mechanisms missing from vanilla MAD: diversity of initial viewpoints and explicit, calibrated confidence communication. We propose two lightweight interventions: diversity-aware initialisation that selects a more diverse pool of candidate answers, and a confidence-modulated debate protocol in which agents express calibrated confidence and condition their updates on others' confidence. We show theoretically that diversity-aware initialisation improves the prior probability of MAD success, while confidence-modulated updates enable debate to systematically drift toward correct hypotheses. Empirically, across six reasoning-oriented QA benchmarks, our methods consistently outperform vanilla MAD and majority vote."
+}
+
 @misc{zhang2025reinforcementlearningbetterverbalized,
-      title={Reinforcement Learning for Better Verbalized Confidence in Long-Form Generation}, 
+      title={Reinforcement Learning for Better Verbalized Confidence in Long-Form Generation},
       author={Caiqi Zhang and Xiaochen Zhu and Chengzu Li and Nigel Collier and Andreas Vlachos},
       year={2025},
       eprint={2505.23912},
@@ -9,13 +37,13 @@
       primaryClass={cs.CL},
       selected={true},
       preview={LoVeC.png},
-      abbr={arXiv},
-      url={https://arxiv.org/abs/2505.23912}, 
+      abbr={ACL 2026 Main},
+      url={https://arxiv.org/abs/2505.23912},
       abstract="Hallucination remains a major challenge for the safe and trustworthy deployment of large language models (LLMs) in factual content generation. Prior work has explored confidence estimation as an effective approach to hallucination detection, but often relies on post-hoc self-consistency methods that require computationally expensive sampling. Verbalized confidence offers a more efficient alternative, but existing approaches are largely limited to short-form question answering (QA) tasks and do not generalize well to open-ended generation. In this paper, we propose LoVeC (Long-form Verbalized Confidence), an on-the-fly verbalized confidence estimation method for long-form generation. Specifically, we use reinforcement learning (RL) to train LLMs to append numerical confidence scores to each generated statement, serving as a direct and interpretable signal of the factuality of generation. Our experiments consider both on-policy and off-policy RL methods, including DPO, ORPO, and GRPO, to enhance the model calibration. We introduce two novel evaluation settings, free-form tagging and iterative tagging, to assess different verbalized confidence estimation methods. Experiments on three long-form QA datasets show that our RL-trained models achieve better calibration and generalize robustly across domains. Also, our method is highly efficient, as it only requires adding a few tokens to the output being decoded."
 }
 
 @misc{lee2025collaborativeevaluationdeepfaketext,
-      title={Collaborative Evaluation of Deepfake Text with Deliberation-Enhancing Dialogue Systems}, 
+      title={Collaborative Evaluation of Deepfake Text with Deliberation-Enhancing Dialogue Systems},
       author={Jooyoung Lee and Xiaochen Zhu and Georgi Karadzhov and Tom Stafford and Andreas Vlachos and Dongwon Lee},
       year={2025},
       eprint={2503.04945},
@@ -23,7 +51,7 @@
       primaryClass={cs.CL},
       selected={true},
       preview={deepfake-dialogue.png},
-      abbr={arXiv},
+      abbr={ICWSM 2026},
       html={https://arxiv.org/abs/2503.04945},
       abstract="The proliferation of generative models has presented significant challenges in distinguishing authentic human-authored content from deepfake content. Collaborative human efforts, augmented by AI tools, present a promising solution. In this study, we explore the potential of DeepFakeDeLiBot, a deliberation-enhancing chatbot, to support groups in detecting deepfake text. Our findings reveal that group-based problem-solving significantly improves the accuracy of identifying machine-generated paragraphs compared to individual efforts. While engagement with DeepFakeDeLiBot does not yield substantial performance gains overall, it enhances group dynamics by fostering greater participant engagement, consensus building, and the frequency and diversity of reasoning-based utterances. Additionally, participants with higher perceived effectiveness of group collaboration exhibited performance benefits from DeepFakeDeLiBot. These findings underscore the potential of deliberative chatbots in fostering interactive and productive group dynamics while ensuring accuracy in collaborative deepfake text detection."
 }
@@ -79,7 +107,7 @@
     publisher = "Association for Computational Linguistics",
     url = "https://aclanthology.org/2023.emnlp-demo.9",
     doi = "10.18653/v1/2023.emnlp-demo.9",
-    abbr={EMNLP},
+    abbr={EMNLP 2023},
     preview={convlab-3.png},
     pages = "106--123",
     selected={true},
@@ -87,4 +115,4 @@
 }
 
 @article{Forward_Zhu_2023, title={Speaking with our Sources— The Possibilities and Pitfalls of {AI} Language Models in Historical Research}, volume={54}, number={2}, journal={PASSPORT THE SOCIETY FOR HISTORIANS OF AMERICAN FOREIGN RELATIONS REVIEW}, author={Forward, Jacob and Zhu, Xiaochen}, year={2023}, month={Sep}, pages={106–107}
-} 
+}

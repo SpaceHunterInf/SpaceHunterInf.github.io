@@ -2,96 +2,71 @@
   type: map
   contents:
     - name: Full Name
-      value: Albert Einstein
-    - name: Date of Birth
-      value: 14th March 1879
+      value: Xiaochen (Neo) Zhu
+    - name: Email
+      value: xz479 [at] cam.ac.uk
     - name: Languages
-      value: English, German
+      value: English, Mandarin Chinese
 
 - title: Education
   type: time_table
   contents:
-    - title: PhD
-      institution: University of Zurich, Zurich, Switzerland
-      year: 1905
+    - title: PhD in Computer Science
+      institution: University of Cambridge, King's College, UK
+      year: 2022 - present
       description:
-        - Description 1.
-        - Description 2.
-        - title: Description 3.
-          contents:
-            - Sub-description 1.
-            - Sub-description 2.
-    - title: Federal teaching diploma
-      institution: Eidgenössische Technische Hochschule, Zurich, Switzerland
-      year: 1900
+        - "Supervisor: Prof. Andreas Vlachos"
+        - Natural Language Processing, Large Language Models, Dialogue Systems
+    - title: MPhil in Advanced Computer Science (Distinction)
+      institution: University of Cambridge, UK
+      year: 2021 - 2022
+    - title: BSc Artificial Intelligence and Computer Science (First Class Honours)
+      institution: University of Edinburgh, UK
+      year: 2017 - 2021
       description:
-        - Description 1.
-        - Description 2.
+        - "Supervisor: Prof. Shay Cohen"
 
-- title: Experience
+- title: Selected Publications
   type: time_table
   contents:
-    - title: Professor of Theoretical Physics
-      institution: Institute for Advanced Study, Princeton University
-      year: 1933 - 1955
+    - title: "Demystifying Multi-Agent Debate: The Role of Confidence and Diversity"
+      year: 2026
       description:
-        - Description 1.
-        - Description 2.
-        - title: Description 3.
-          contents:
-            - Sub-description 1.
-            - Sub-description 2.
-    - title: Visiting Professor
-      institution: California Institute of Technology, Pasadena, California, US
-      year: 1933
+        - ACL 2026 Findings
+    - title: "Reinforcement Learning for Better Verbalized Confidence in Long-Form Generation (LoVeC)"
+      year: 2026
       description:
-        - Description 1.
-        - Description 2.
-
-    - title: Director
-      institution: Kaiser Wilhelm Institute for Physics, Berlin, Germany.
-      year: 1917-1933
-
-    - title: Professor of Theoretical Physics
-      institution: Karl-Ferdinand University, Prague, Czechoslovakia
-      year: 1911 - 1917
+        - ACL 2026 Main
+    - title: "Collaborative Evaluation of Deepfake Text with Deliberation-Enhancing Dialogue Systems"
+      year: 2026
       description:
-
-    - title: Associate Professor of Theoretical Physics
-      institution: University of Zurich, Zurich, Switzerland
-      year: 1909 - 1911
-
-- title: Open Source Projects
-  type: time_table
-  contents:
-    - title: <a href="https://github.com/alshedivat/al-folio">al-folio</a>
-      year: 2015-now
-      description: A beautiful, simple, clean, and responsive Jekyll theme for academics.
-
-- title: Honors and Awards
-  type: time_table
-  contents:
-    - year: 1921
-      items:
-        - Nobel Prize in Physics
-        - Matteucci Medal
-    - year: 2029
-      items:
-        - Max Planck Medal
+        - ICWSM 2026
+    - title: "Conformity in Large Language Models"
+      year: 2025
+      description:
+        - ACL 2025 Main
+    - title: "Segment-Level Diffusion: A Framework for Controllable Long-Form Generation with Diffusion Language Models"
+      year: 2025
+      description:
+        - ACL 2025 Main
+    - title: "ConvLab-3: A Flexible Dialogue System Toolkit Based on a Unified Data Format"
+      year: 2023
+      description:
+        - EMNLP 2023
 
 - title: Academic Interests
   type: nested_list
   contents:
-    - title: Topic 1.
+    - title: Natural Language Processing
       items:
-        - Description 1.
-        - Description 2.
-    - title: Topic 2.
+        - Large Language Models
+        - Multi-agent debate and collective decision-making
+        - Confidence calibration and hallucination mitigation
+    - title: Generative Models
       items:
-        - Description 1.
-        - Description 2.
-
-- title: Other Interests
-  type: list
-  contents:
-    - <u>Hobbies:</u> Hobby 1, Hobby 2, etc.
+        - Diffusion language models for controllable text generation
+        - Non-autoregressive generation
+    - title: Computational Social Science
+      items:
+        - Deliberation and group decision-making
+        - Conformity and social influence in AI systems
